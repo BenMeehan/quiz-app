@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Answer</title>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css" integrity="sha512-8bHTC73gkZ7rZ7vpqUQThUDhqcNFyYi2xgDgPDHc+GXVGHXq+xPjynxIopALmOPqzo9JZj0k6OqqewdGO3EsrQ==" crossorigin="anonymous" />
+</head>
+<body>
+    <div class="ui grid container" style="margin-top: 5%;">
+        <div class="row"style="text-align: right;">
+            <div class="sixteen wide column">
+                <div class="ui statistic">
+                    <div class="value">
+                      x
+                    </div>
+                    <div class="label">
+                      Users Taking This Quiz 
+                    </div>
+                  </div>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="four wide column">
+                <div class="ui vertical fluid tabular menu">
+                  <a class="item active" id="python">
+                    Python
+                  </a>
+                  <a class="item" id="computer-networks">
+                    Computer Networks
+                  </a>
+                </div>
+              </div>
+              <div class="twelve wide stretched column">
+                <div class="ui segment">
+                    <div class="questions" style="padding-bottom: 2%;">
+                    </div>
+                    <button class="positive ui button button1">Take Quiz</button>
+                    <button class="negative ui button button2">Submit</button>
+                </div>
+              </div>
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(()=>{
+            var tab="Python"
+            var questions={}
+            $.get('/initial',(data)=>{
+                        $('.value').text(data)
+                    });
+            setInterval(function(){
+                if(tab==='Python'){
+                    $.get('/get_users_py',tab,(data)=>{
+                            $('.value').text(data)
+                        });
+                     }
+                else if(tab==='Computer Networks'){
+                    $.get('/get_users_cn',tab,(data)=>{
+                            $('.value').text(data)
+                        });
+                     }
+                }, 1000);
+            function find_score(value_of_tab){
+                j=Object.keys(questions).length-2
+                score=0;
+                for(i=0;i<Object.keys(questions).length;i++){
+                    selected=[]
+                        $('#'+value_of_tab+(i+1)+' input:checked').each(function(){
+                            selected.push($(this).attr('name'))
+                        })
+                        if(selected.length==1){
+                            if(questions['question'+j]['correct']===selected[0]){
+                                score++
+                            }
+                    }
+                    j--;
+                }
+                return score;
+            }
+            function render_questions(data,value_of_tab){
+                    questions=data
+                    console.log(questions);
+                    j=Object.keys(data).length-1
+                    for(i=0;i<Object.keys(data).length-1;i++){
+                        q='<h3 class="ui header">'+(j)+'. '+data['question'+i]['ques']+'</h3>'
+                        ans1='<div class="ui checkbox"><input type="checkbox" name="'+data['question'+i]['ans1']+'"><label>'+data['question'+i]['ans1']+'</label></div>'
+                        ans2='<div class="ui checkbox"><input type="checkbox" name="'+data['question'+i]['ans2']+'"><label>'+data['question'+i]['ans2']+'</label></div>'
+                        ans3='<div class="ui checkbox"><input type="checkbox" name="'+data['question'+i]['ans3']+'"><label>'+data['question'+i]['ans3']+'</label></div>'
+                        ans4='<div class="ui checkbox"><input type="checkbox" name="'+data['question'+i]['ans4']+'"><label>'+data['question'+i]['ans4']+'</label></div>'
+                        $('.questions').prepend('<div class="ui segment" id="'+value_of_tab+(j)+'">'+q+'<p>'+ans1+'</p>'+'<p>'+ans2+'</p>'+'<p>'+ans3+'</p>'+ans4+'</div>')
+                        j--;
+                    }
+            }
+            $('.button2').hide()
+            $('.button2').click(()=>{
+                if(tab==='Python'){
+                    $.get('/submit_python',(data)=>{
+                        $('.value').text(data)
+                        }
+                        )
+                    score=find_score('python')
+                    $('.questions').hide('fast')
+                    $('.button2').hide('fast')
+                    $('.ui.segment').append("<h3>Your score is "+score+" / "+(Object.keys(questions).length-1)+"</h3>")
+                }
+                else if(tab=='Computer Networks'){
+                    $.get('/submit_networks',(data)=>{
+                        $('.value').text(data)
+                        }
+                        )
+                    score=find_score('cn')
+                    $('.questions').hide('fast')
+                    $('.button2').hide('fast')
+                    $('.ui.segment').append("<h3>Your score is "+score+" / "+(Object.keys(questions).length-1)+"</h3>")
+                }
+            })
+            $('a.item').click(()=>{
+                    $('a.item').toggleClass('active')
+                    tab=$('a.item.active').text()
+                    tab=$.trim(tab)
+                    $('.questions').empty()
+                    $('.button1').show('fast')
+                    $('.button2').hide('fast')
+                    $('h3').hide('fast')
+                })
+            $('.button1').click(()=>{
+                if(tab==='Python'){
+                $.get('/python',(data)=>{
+                   render_questions(data,'python')
+                   $('.questions').show('fast')
+                   $('.value').text(data['users'])
+                });
+            }
+            else if(tab==='Computer Networks'){
+                $.get('/cn',(data)=>{
+                    render_questions(data,'cn')
+                    $('.questions').show('fast')
+                    $('.value').text(data['users'])
+                });
+            }
+                $('.button1').hide('fast')
+                $('.button2').show('fast')
+            });
+        });
+    </script>
+</body>
+</html>
